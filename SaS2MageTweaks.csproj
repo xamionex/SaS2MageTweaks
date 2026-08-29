@@ -2,10 +2,10 @@
 
     <PropertyGroup>
         <TargetFramework>net452</TargetFramework>
-        <AssemblyName>amione.SaS2SkipHuntChases</AssemblyName>
-        <Product>SaS2SkipHuntChases</Product>
-        <ProductDescription>Adds configurable options to skip mage hunt phases, along with modifying their loot drops and health</ProductDescription>
-        <Version>1.1.0</Version>
+        <AssemblyName>amione.SaS2MageTweaks</AssemblyName>
+        <Product>SaS2MageTweaks</Product>
+        <ProductDescription>Configurable tweaks for mage hunts: skip hunt phases, adjust minion spawns, loot drops and health</ProductDescription>
+        <Version>1.1.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RestoreAdditionalProjectSources>

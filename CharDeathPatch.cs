@@ -8,7 +8,7 @@ using ProjectMage.particles;
 using ProjectMage.gamestate;
 using LootHero.loot;
 
-namespace SaS2SkipHuntChases;
+namespace SaS2MageTweaks;
 
 [HarmonyPatch]
 public static class CharDeathPatch

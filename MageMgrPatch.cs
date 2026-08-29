@@ -9,7 +9,7 @@ using ProjectMage.gamestate.arenastate;
 using ProjectMage.gamestate.mage;
 using ProjectMage.map.arena;
 
-namespace SaS2SkipHuntChases;
+namespace SaS2MageTweaks;
 
 [HarmonyPatch]
 public static class MageMgrPatch

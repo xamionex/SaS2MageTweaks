@@ -7,7 +7,7 @@ using ProjectMage.gamestate;
 using ProjectMage.gamestate.arenastate;
 using ProjectMage.gamestate.mage;
 
-namespace SaS2SkipHuntChases;
+namespace SaS2MageTweaks;
 
 internal static class MageSkipHelper
 {
@@ -106,10 +106,11 @@ internal static class MageSkipHelper
 
     internal static void ReduceBossHp(Character character, Mage mage)
     {
+        if (!Plugin.ReduceBossHp.Value) return;
+
         var monsterDef = MonsterCatalog.monsterDef[character.monsterIdx];
         var maxHp      = (float)Plugin.GetMaxHpMethod.Invoke(monsterDef.gameMonster, [character]); 
-        var targetHp = maxHp / 2f;
-        if (Plugin.ReduceBossHp.Value) targetHp = GauntletMgr.IsActive ? maxHp / 2f : maxHp / 4f;
+        var targetHp = GauntletMgr.IsActive ? maxHp / 2f : maxHp / 4f;
         var newHp = targetHp * Plugin.BossHpMultiplier.Value;
 
         if (!(Math.Abs(character.hp - newHp) > 0.1f)) return;
@@ -135,5 +136,41 @@ internal static class MageSkipHelper
         mage.cycleDamage = mage.cycleMaxDamage + 1f;
         mage.totalDamage = mage.monsterHP;
         Plugin.Instance.Log.LogInfo($"Cycles completed for mage {mage.charIdx} ({GetMageName(mage)}): skipped {skipped}/{mage.totalCycles}.");
+    }
+
+    /// Scales the summon pools of a mage by the configured multipliers. Vanilla pools are 20 regular, 8 special, 4 elite.
+    /// Both warp summons and phase summons draw from the same pool, so the pool is scaled by the larger of the two
+    /// multipliers; the per-event count is scaled separately in MagePatch.SummonPatch.
+    internal static void ApplyMinionCountMultipliers(Mage mage)
+    {
+        var poolMultiplier = Math.Max(Plugin.WarpSummonCountMultiplier.Value, Plugin.PhaseSummonCountMultiplier.Value);
+        mage.pool[0] = (int)Math.Round(20f * poolMultiplier);
+        mage.pool[1] = (int)Math.Round(8f  * poolMultiplier);
+        mage.pool[2] = (int)Math.Round(4f  * poolMultiplier);
+        for (var j = 0; j < 3; j++)
+        {
+            if (mage.pool[j] < 0) mage.pool[j] = 0;
+            mage.poolMax[j] = mage.pool[j];
+        }
+    }
+
+    /// Returns the configured per-event summon count multiplier for the given mage phase.
+    /// Phase 9 is the warp-away summon (ambush summon); phases 0, 1, 4 and 14 are the regular phase summons (0/1 = cycle-start summon, 4 = re-summon when minions die, 14 = boss heartseeker/eyeseeker summon).
+    internal static float GetSummonCountMultiplier(int phase)
+    {
+        return phase switch
+        {
+            9 => Plugin.WarpSummonCountMultiplier.Value,
+            0 or 1 or 4 or 14 => Plugin.PhaseSummonCountMultiplier.Value,
+            _ => 1f
+        };
+    }
+
+    /// Returns the configured damage multiplier for a minion character, or 1.0 if the character is not a mage minion.
+    internal static float GetMinionDamageMultiplier(Character character)
+    {
+        if (character.minionParentIdx < 0) return 1f;
+        if (Math.Abs(Plugin.MinionDamageMultiplier.Value - 1f) < 0.001f) return 1f;
+        return Plugin.MinionDamageMultiplier.Value;
     }
 }
