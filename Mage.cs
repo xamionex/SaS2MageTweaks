@@ -131,6 +131,22 @@ internal static class MagePatch
         return true;
     }
 
+    // The original SummonNext ends the event early whenever a special or elite minion is picked (summonFrame = 0).
+    // That would cut the scaled count short in later cycles, so when the multiplier is active we keep the summon window open until the cap is reached.
+    [HarmonyPatch(typeof(Mage), "SummonNext")]
+    [HarmonyPostfix]
+    public static void SummonNextPostfix(Mage __instance)
+    {
+        if (!SummonMultipliers.TryGetValue(__instance.charIdx, out var multiplier)) return;
+        if (Math.Abs(multiplier - 1f) < 0.001f) return;
+
+        var count = SummonCounts.TryGetValue(__instance.charIdx, out var c) ? c : 0;
+        var max = (int)Math.Round(2f * multiplier);
+        if (count >= max) return; // prefix already stopped the event
+
+        __instance.summonFrame = 1.5f * multiplier;
+    }
+
     // Disable the ambush summon phase (mage warps away and summons minions mid-hunt).
     [HarmonyPatch(typeof(Mage), "Update")]
     [HarmonyPrefix]
