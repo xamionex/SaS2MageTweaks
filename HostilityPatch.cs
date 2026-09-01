@@ -29,10 +29,11 @@ internal static class HostilityPatch
 
         var meIsMage       = meDef.gameMonster.mage;
         var meIsMinion     = meDef.gameMonster.minion;
+        var meIsMob        = meDef.gameMonster.mob;
         var otherIsMage    = otherDef.gameMonster.mage;
         var otherIsMinion  = otherDef.gameMonster.minion;
-        var otherIsHazeburnt = otherDef.gameMonster.hazeBurnt;
         var otherIsMob     = otherDef.gameMonster.mob;
+        var otherIsHazeburnt = otherDef.gameMonster.hazeBurnt;
 
         if (Plugin.MagesWontHitMages.Value && meIsMage && otherIsMage)
         {
@@ -70,6 +71,16 @@ internal static class HostilityPatch
             return false;
         }
         if (Plugin.MinionsWontHitMobs.Value && meIsMinion && otherIsMob)
+        {
+            __result = false;
+            return false;
+        }
+        if (Plugin.MobsWontHitMinions.Value && meIsMob && otherIsMinion)
+        {
+            __result = false;
+            return false;
+        }
+        if (Plugin.MobsWontHitMages.Value && meIsMob && otherIsMage)
         {
             __result = false;
             return false;
