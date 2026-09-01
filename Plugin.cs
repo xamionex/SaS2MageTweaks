@@ -43,6 +43,14 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<float> MinionDamageMultiplier;
     internal static ConfigEntry<bool> DisableWarpAndSummonMinions;
     internal static ConfigEntry<bool> DisableWarpAndAggressiveAttack;
+    internal static ConfigEntry<bool> MagesWontHitMages;
+    internal static ConfigEntry<bool> MinionsWontHitMinions;
+    internal static ConfigEntry<bool> MagesWontHitMinions;
+    internal static ConfigEntry<bool> MinionsWontHitMages;
+    internal static ConfigEntry<bool> MagesWontHitHazeburnt;
+    internal static ConfigEntry<bool> MinionsWontHitHazeburnt;
+    internal static ConfigEntry<bool> MagesWontHitMobs;
+    internal static ConfigEntry<bool> MinionsWontHitMobs;
 
     private FileSystemWatcher _configWatcher;
     private Timer _debounceTimer;
@@ -68,6 +76,14 @@ public class Plugin : BasePlugin
         MinionDamageMultiplier  = Config.Bind("Minions", "MinionDamageMultiplier",  1.0f,   new ConfigDescription("Scales the damage dealt by minions summoned by mages. 1.0 = vanilla.", new AcceptableValueRange<float>(0.1f, 10.0f)));
         DisableWarpAndSummonMinions = Config.Bind("General", "DisableWarpAndSummonMinions", false, "Disable the ambush summon phase for mages that have it (they will not warp away and summon minions mid-hunt).");
         DisableWarpAndAggressiveAttack = Config.Bind("General", "DisableWarpAndAggressiveAttack", false, "Disable the ambush rage phase for mages that have it (they will not warp to the player and enter an aggressive attack state mid-hunt).");
+        MagesWontHitMages       = Config.Bind("Mages", "MagesWontHitMages",       false, "Mages will not damage or aggro other mages outside of Trials of the Brave.");
+        MinionsWontHitMinions   = Config.Bind("Minions", "MinionsWontHitMinions", false, "Minions will not damage or aggro other minions outside of Trials of the Brave.");
+        MagesWontHitMinions     = Config.Bind("Mages", "MagesWontHitMinions",     false, "Mages will not damage or aggro minions outside of Trials of the Brave.");
+        MinionsWontHitMages     = Config.Bind("Minions", "MinionsWontHitMages",   false, "Minions will not damage or aggro mages outside of Trials of the Brave.");
+        MagesWontHitHazeburnt   = Config.Bind("Mages", "MagesWontHitHazeburnt",   false, "Mages will not damage or aggro hazeburnt monsters outside of Trials of the Brave.");
+        MinionsWontHitHazeburnt = Config.Bind("Minions", "MinionsWontHitHazeburnt", false, "Minions will not damage or aggro hazeburnt monsters outside of Trials of the Brave.");
+        MagesWontHitMobs        = Config.Bind("Mages", "MagesWontHitMobs",        false, "Mages will not damage or aggro regular enemies (mobs) outside of Trials of the Brave.");
+        MinionsWontHitMobs      = Config.Bind("Minions", "MinionsWontHitMobs",    false, "Minions will not damage or aggro regular enemies (mobs) outside of Trials of the Brave.");
 
         var modOptionsType = Type.GetType("SaS2ModOptions.SaS2ModOptions, amione.SaS2ModOptions");
         if (modOptionsType != null)
@@ -152,6 +168,14 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(PhaseSummonCountMultiplier, 		cat, "Phase Summon Count Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionHpMultiplier,           		cat, "Minion HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionDamageMultiplier,       		cat, "Minion Damage Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMinions,        		cat, "Won't Hit Other Minions", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMages,          		cat, "Won't Hit Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitHazeburnt,      		cat, "Won't Hit Hazeburnt", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMobs,           		cat, "Won't Hit Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMages,            		cat = "Mages - General", "Won't Hit Other Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMinions,          		cat, "Won't Hit Minions", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitHazeburnt,        		cat, "Won't Hit Hazeburnt", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMobs,             		cat, "Won't Hit Regular Enemies", order += 1);
         // ReSharper restore RedundantAssignment
     }
 
