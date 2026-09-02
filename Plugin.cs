@@ -178,7 +178,7 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMages,          		cat, "Minions Won't Hit Mages", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitHazeburnt,      		cat, "Minions Won't Hit Hazeburnt", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMobs,           		cat, "Minions Won't Hit Regular Enemies", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMages,            		cat = "Mages - General", "Won't Hit Other Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMages,            		cat = "Mages - General", "Mages Won't Hit Other Mages", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMinions,          		cat, "Mages Won't Hit Minions", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitHazeburnt,        		cat, "Mages Won't Hit Hazeburnt", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMobs,             		cat, "Mages Won't Hit Regular Enemies", order += 1);
