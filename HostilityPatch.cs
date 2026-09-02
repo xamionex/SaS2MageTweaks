@@ -85,6 +85,11 @@ internal static class HostilityPatch
             __result = false;
             return false;
         }
+        if (Plugin.MobsWontHitHazeburnt.Value && meIsMob && otherIsHazeburnt)
+        {
+            __result = false;
+            return false;
+        }
         return true;
     }
 }

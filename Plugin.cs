@@ -53,6 +53,7 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> MinionsWontHitMobs;
     internal static ConfigEntry<bool> MobsWontHitMinions;
     internal static ConfigEntry<bool> MobsWontHitMages;
+    internal static ConfigEntry<bool> MobsWontHitHazeburnt;
 
     private FileSystemWatcher _configWatcher;
     private Timer _debounceTimer;
@@ -88,6 +89,7 @@ public class Plugin : BasePlugin
         MinionsWontHitMobs      = Config.Bind("Minions", "MinionsWontHitMobs",    false, "Minions will not damage or aggro regular enemies (mobs).");
         MobsWontHitMinions      = Config.Bind("General", "MobsWontHitMinions",    false, "Regular enemies (mobs) will not damage or aggro minions.");
         MobsWontHitMages        = Config.Bind("General", "MobsWontHitMages",      false, "Regular enemies (mobs) will not damage or aggro mages.");
+        MobsWontHitHazeburnt   = Config.Bind("General", "MobsWontHitHazeburnt",  false, "Regular enemies (mobs) will not damage or aggro hazeburnt monsters.");
 
         var modOptionsType = Type.GetType("SaS2ModOptions.SaS2ModOptions, amione.SaS2ModOptions");
         if (modOptionsType != null)
@@ -182,6 +184,7 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMobs,             		cat, "Mages Won't Hit Regular Enemies", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MobsWontHitMinions,           		cat, "Regular Enemies Won't Hit Minions", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MobsWontHitMages,             		cat, "Regular Enemies Won't Hit Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MobsWontHitHazeburnt,         		cat, "Regular Enemies Won't Hit Hazeburnt", order += 1);
         // ReSharper restore RedundantAssignment
     }
 
