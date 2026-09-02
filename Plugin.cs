@@ -172,14 +172,14 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(PhaseSummonCountMultiplier, 		cat, "Phase Summon Count Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionHpMultiplier,           		cat, "Minion HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionDamageMultiplier,       		cat, "Minion Damage Multiplier", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMinions,        		cat, "Won't Hit Other Minions", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMages,          		cat, "Won't Hit Mages", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitHazeburnt,      		cat, "Won't Hit Hazeburnt", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMobs,           		cat, "Won't Hit Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMinions,        		cat, "Minions Won't Hit Other Minions", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMages,          		cat, "Minions Won't Hit Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitHazeburnt,      		cat, "Minions Won't Hit Hazeburnt", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMobs,           		cat, "Minions Won't Hit Regular Enemies", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMages,            		cat = "Mages - General", "Won't Hit Other Mages", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMinions,          		cat, "Won't Hit Minions", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitHazeburnt,        		cat, "Won't Hit Hazeburnt", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMobs,             		cat, "Won't Hit Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMinions,          		cat, "Mages Won't Hit Minions", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitHazeburnt,        		cat, "Mages Won't Hit Hazeburnt", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMobs,             		cat, "Mages Won't Hit Regular Enemies", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MobsWontHitMinions,           		cat, "Regular Enemies Won't Hit Minions", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MobsWontHitMages,             		cat, "Regular Enemies Won't Hit Mages", order += 1);
         // ReSharper restore RedundantAssignment
