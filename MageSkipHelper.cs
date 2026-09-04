@@ -106,12 +106,12 @@ internal static class MageSkipHelper
 
     internal static void ReduceBossHp(Character character, Mage mage)
     {
-        if (!Plugin.ReduceBossHp.Value) return;
+        if (!Plugin.ReduceMageHp.Value) return;
 
         var monsterDef = MonsterCatalog.monsterDef[character.monsterIdx];
         var maxHp      = (float)Plugin.GetMaxHpMethod.Invoke(monsterDef.gameMonster, [character]); 
         var targetHp = GauntletMgr.IsActive ? maxHp / 2f : maxHp / 4f;
-        var newHp = targetHp * Plugin.BossHpMultiplier.Value;
+        var newHp = targetHp * Plugin.MageHpMultiplier.Value;
 
         if (!(Math.Abs(character.hp - newHp) > 0.1f)) return;
         Plugin.Instance.Log.LogInfo($"Mage {mage.charIdx} HP: {character.hp} -> {newHp} (max: {maxHp})");

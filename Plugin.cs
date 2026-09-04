@@ -34,8 +34,8 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> SpawnAtFinalLocation;
     internal static ConfigEntry<bool> DropLootRelativeAmount;
     internal static ConfigEntry<float> DropLootMultiplier;
-    internal static ConfigEntry<bool> ReduceBossHp;
-    internal static ConfigEntry<float> BossHpMultiplier;
+    internal static ConfigEntry<bool> ReduceMageHp;
+    internal static ConfigEntry<float> MageHpMultiplier;
     internal static ConfigEntry<float> HazeburntCountMultiplier;
     internal static ConfigEntry<float> WarpSummonCountMultiplier;
     internal static ConfigEntry<float> PhaseSummonCountMultiplier;
@@ -65,13 +65,13 @@ public class Plugin : BasePlugin
         SkipNamedMages          = Config.Bind("General", "SkipNamedMages",          false,  "Skip hunt phases for named mission mages (e.g. Arzhan-Tin, Celus Zend).");
         SkipFatedMages          = Config.Bind("General", "SkipFatedMages",          false,  "Skip hunt phases for fated mages (tiered mages shown with a tier number in mission select).");
         SkipNamelessMages       = Config.Bind("General", "SkipNamelessMages",       false,  "Skip hunt phases for nameless mission mages (repeatable hunts, reward token_nameless).");
-        SkipGauntletMages       = Config.Bind("General", "SkipGauntletMages",       false,  "Skip hunt phases for gauntlet mages (each one immediately starts a boss fight).");
+        SkipGauntletMages       = Config.Bind("General", "SkipGauntletMages",       false,  "Skip hunt phases for gauntlet mages (each one immediately starts a 'boss' fight).");
         SkipWanderingMages      = Config.Bind("General", "SkipWanderingMages",      false,  "Skip hunt phases for wandering/roaming mages.");
         SpawnAtFinalLocation    = Config.Bind("General", "SpawnAtFinalLocation",    false,  "Teleport the primary mission mage directly to its arena entrance when skipping. Off by default, mages spawn at zone 0 and walk to the arena naturally. Only affects the non-invisible target mage; companion mages in the same hunt should be unaffected.");
         DropLootRelativeAmount  = Config.Bind("Loot",    "DropLootRelativeAmount",  false,  "Drop bonus loot on death to compensate for skipped hunt phases.");
         DropLootMultiplier      = Config.Bind("Loot",    "DropLootMultiplier",      1.0f,   new ConfigDescription("Scales the bonus loot dropped per skipped phase. 1.0 = one extra phase-equivalent drop total.", new AcceptableValueRange<float>(0.1f, 10.0f)));
-        ReduceBossHp            = Config.Bind("General", "ReduceBossHP",            false,  "Start boss fight with reduced HP (simulates hunt damage).");
-        BossHpMultiplier        = Config.Bind("General", "BossHpMultiplier",        1.0f,   "Multiply mage starting HP by this value after the hunt-damage reduction.");
+        ReduceMageHp            = Config.Bind("General", "ReduceMageHP",            false,  "Start mage fight with reduced HP (simulates hunt damage).");
+        MageHpMultiplier        = Config.Bind("General", "MageHpMultiplier",        1.0f,   "Multiply mage starting HP by this value after the hunt-damage reduction.");
         HazeburntCountMultiplier = Config.Bind("General", "HazeburntCountMultiplier", 1.0f,  new ConfigDescription("Scales how many hazeburnt monsters can be active at once during hunts, invasions and roaming. 1.0 = vanilla (2 during hunts, 16 during Blue Heart invasions). 0 = no hazeburnt spawn.", new AcceptableValueRange<float>(0.0f, 10.0f)));
         WarpSummonCountMultiplier  = Config.Bind("Minions", "WarpSummonCountMultiplier",  1.0f, new ConfigDescription("Scales how many minions a mage summons each time it warps away and summons mid-hunt. 1.0 = vanilla (2 per warp summon). 0 = mages never summon minions when they warp. Also scales the fight's total minion pool when higher than the phase multiplier.", new AcceptableValueRange<float>(0.0f, 10.0f)));
         PhaseSummonCountMultiplier = Config.Bind("Minions", "PhaseSummonCountMultiplier", 1.0f, new ConfigDescription("Scales how many minions a mage summons each time it casts a summon during a hunt phase. 1.0 = vanilla (2 per phase summon). 0 = mages never summon minions during phases. Also scales the fight's total minion pool when higher than the warp multiplier.", new AcceptableValueRange<float>(0.0f, 10.0f)));
@@ -167,8 +167,8 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(DisableWarpAndAggressiveAttack,  	cat, "Disable Warp And Aggressive Attack", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(DropLootRelativeAmount, 			cat = "Mages - General", "Extra Loot Based on Skipped Phases", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(DropLootMultiplier,     			cat, "Loot Multiplier", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(ReduceBossHp,           			cat, "Reduce Boss HP", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(BossHpMultiplier,       			cat, "Boss HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(ReduceMageHp,           			cat, "Reduce Mage HP", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MageHpMultiplier,       			cat, "Mage HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(HazeburntCountMultiplier, 		cat, "Hazeburnt Count Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(WarpSummonCountMultiplier,  		cat = "Mages - Minions", "Warp Summon Count Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(PhaseSummonCountMultiplier, 		cat, "Phase Summon Count Multiplier", order += 1);
