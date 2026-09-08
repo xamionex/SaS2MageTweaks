@@ -165,12 +165,4 @@ internal static class MageSkipHelper
             _ => 1f
         };
     }
-
-    /// Returns the configured damage multiplier for a minion character, or 1.0 if the character is not a mage minion.
-    internal static float GetMinionDamageMultiplier(Character character)
-    {
-        if (character.minionParentIdx < 0) return 1f;
-        if (Math.Abs(Plugin.MinionDamageMultiplier.Value - 1f) < 0.001f) return 1f;
-        return Plugin.MinionDamageMultiplier.Value;
-    }
 }
