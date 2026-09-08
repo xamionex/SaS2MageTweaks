@@ -79,6 +79,8 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> MobsWontHitMinions;
     internal static ConfigEntry<bool> MobsWontHitMages;
     internal static ConfigEntry<bool> MobsWontHitHazeburnt;
+    internal static ConfigEntry<bool> MagesTakeFullDamageDuringWarpIn;
+    internal static ConfigEntry<bool> MinionsTakeFullDamageDuringWarpIn;
 
     private FileSystemWatcher _configWatcher;
     private Timer _debounceTimer;
@@ -140,6 +142,8 @@ public class Plugin : BasePlugin
         MobsWontHitMinions      = Config.Bind("General", "MobsWontHitMinions",    false, "Regular enemies (mobs) will not damage or aggro minions.");
         MobsWontHitMages        = Config.Bind("General", "MobsWontHitMages",      false, "Regular enemies (mobs) will not damage or aggro mages.");
         MobsWontHitHazeburnt   = Config.Bind("General", "MobsWontHitHazeburnt",  false, "Regular enemies (mobs) will not damage or aggro hazeburnt monsters.");
+        MagesTakeFullDamageDuringWarpIn = Config.Bind("Mages", "MagesTakeFullDamageDuringWarpIn", false, "Mages take full damage while warping in instead of being invulnerable during the warp-in animation.");
+        MinionsTakeFullDamageDuringWarpIn = Config.Bind("Minions", "MinionsTakeFullDamageDuringWarpIn", false, "Minions take full damage while warping in instead of being invulnerable during the warp-in animation.");
 
         var modOptionsType = Type.GetType("SaS2ModOptions.SaS2ModOptions, amione.SaS2ModOptions");
         if (modOptionsType != null)
@@ -237,10 +241,12 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMages,          		mod, cat, "Minions Won't Hit Mages", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitHazeburnt,      		mod, cat, "Minions Won't Hit Hazeburnt", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontHitMobs,           		mod, cat, "Minions Won't Hit Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsTakeFullDamageDuringWarpIn, 	mod, cat, "Minions Take Full Damage During Warp-In", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMages,            		mod, cat = "General", "Mages Won't Hit Other Mages", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMinions,          		mod, cat, "Mages Won't Hit Minions", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitHazeburnt,        		mod, cat, "Mages Won't Hit Hazeburnt", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontHitMobs,             		mod, cat, "Mages Won't Hit Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesTakeFullDamageDuringWarpIn, 	mod, cat, "Mages Take Full Damage During Warp-In", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(RegularEnemyHpMultiplier,     		mod, cat = "Regular Enemies", "Regular Enemy HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(RegularEnemyDamageMultiplier, 		mod, cat, "Regular Enemy Damage Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(RegularEnemyPoiseMultiplier,  		mod, cat, "Regular Enemy Poise Multiplier", order += 1);
