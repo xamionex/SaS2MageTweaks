@@ -168,10 +168,13 @@ internal static class EnemyScalingPatch
 
     /// <summary>
     /// Returns the configured loot multiplier for a character's category.
+    /// The per-type multiplier always applies to its own type; the global Enemies Loot
+    /// multiplier stacks on top for every type that has its Apply Settings toggle on.
     /// </summary>
     private static float GetLootMultiplier(Character character)
     {
-        return GetCategory(character) switch
+        var category = GetCategory(character);
+        var mult = category switch
         {
             Category.Mage => Plugin.MageLootMultiplier.Value,
             Category.Minion => Plugin.MinionLootMultiplier.Value,
@@ -179,12 +182,18 @@ internal static class EnemyScalingPatch
             Category.Hazeburnt => Plugin.HazeburntLootMultiplier.Value,
             _ => 1f
         };
+
+        if (category != Category.None && IsGlobalTweakApplied(MonsterCatalog.monsterDef[character.monsterIdx].gameMonster))
+            mult *= Plugin.EnemiesLootMultiplier.Value;
+
+        return mult;
     }
 
     /// <summary>
     /// Scales the run speed of mages, minions, regular enemies and hazeburnt monsters.
     /// GameMonster.GetRunSpeed is the funnel for ground run speed and jump horizontal velocity.
-    /// The apply toggles decide which enemy types the Global Tweaks run speed multipliers affect.
+    /// The per-type multiplier always applies to its own type; the global Enemies Run Speed
+    /// multiplier stacks on top for every type that has its Apply Settings toggle on.
     /// Hazeburnt wins over mob because hazeburnt monsters are mobs with the hazeburnt flag.
     /// </summary>
     [HarmonyPatch(typeof(GameMonster), "GetRunSpeed")]
@@ -192,19 +201,123 @@ internal static class EnemyScalingPatch
     private static void GetRunSpeedPatch(GameMonster __instance, ref float __result)
     {
         float mult;
-        if (__instance.mage && Plugin.ApplyGlobalTweaksToMages.Value)
+        if (__instance.mage)
             mult = Plugin.MageRunSpeedMultiplier.Value;
-        else if (__instance.minion && Plugin.ApplyGlobalTweaksToMinions.Value)
+        else if (__instance.minion)
             mult = Plugin.MinionRunSpeedMultiplier.Value;
-        else if (__instance.hazeBurnt && Plugin.ApplyGlobalTweaksToHazeburnt.Value)
+        else if (__instance.hazeBurnt)
             mult = Plugin.HazeburntRunSpeedMultiplier.Value;
-        else if (!__instance.hazeBurnt && __instance.mob && Plugin.ApplyGlobalTweaksToRegularEnemies.Value)
+        else if (__instance.mob)
             mult = Plugin.RegularEnemyRunSpeedMultiplier.Value;
         else
             return;
 
+        if (IsGlobalTweakApplied(__instance))
+            mult *= Plugin.EnemiesRunSpeedMultiplier.Value;
+
         if (Math.Abs(mult - 1f) < 0.001f) return;
         __result *= mult;
+    }
+
+    /// <summary>
+    /// Returns true when the Global Tweaks settings apply to this monster's type.
+    /// Hazeburnt wins over mob because hazeburnt monsters are mobs with the hazeburnt flag.
+    /// </summary>
+    private static bool IsGlobalTweakApplied(GameMonster gm)
+    {
+        if (gm.mage) return Plugin.ApplyGlobalTweaksToMages.Value;
+        if (gm.minion) return Plugin.ApplyGlobalTweaksToMinions.Value;
+        if (gm.hazeBurnt) return Plugin.ApplyGlobalTweaksToHazeburnt.Value;
+        if (gm.mob) return Plugin.ApplyGlobalTweaksToRegularEnemies.Value;
+        return false;
+    }
+
+    /// <summary>
+    /// Returns the configured hover speed multiplier for a monster's category.
+    /// The per-type multiplier always applies to its own type; the global Enemies Hover Speed
+    /// multiplier stacks on top for every type that has its Apply Settings toggle on.
+    /// </summary>
+    private static float GetHoverSpeedMultiplier(GameMonster gm)
+    {
+        float mult;
+        if (gm.mage)
+            mult = Plugin.MageHoverSpeedMultiplier.Value;
+        else if (gm.minion)
+            mult = Plugin.MinionHoverSpeedMultiplier.Value;
+        else if (gm.hazeBurnt)
+            mult = Plugin.HazeburntHoverSpeedMultiplier.Value;
+        else if (gm.mob)
+            mult = Plugin.RegularEnemyHoverSpeedMultiplier.Value;
+        else
+            return 1f;
+
+        if (IsGlobalTweakApplied(gm))
+            mult *= Plugin.EnemiesHoverSpeedMultiplier.Value;
+
+        return mult;
+    }
+
+    /// <summary>
+    /// Returns the configured hover accel multiplier for a monster's category.
+    /// The per-type multiplier always applies to its own type; the global Enemies Hover Accel
+    /// multiplier stacks on top for every type that has its Apply Settings toggle on.
+    /// </summary>
+    private static float GetHoverAccelMultiplier(GameMonster gm)
+    {
+        float mult;
+        if (gm.mage)
+            mult = Plugin.MageHoverAccelMultiplier.Value;
+        else if (gm.minion)
+            mult = Plugin.MinionHoverAccelMultiplier.Value;
+        else if (gm.hazeBurnt)
+            mult = Plugin.HazeburntHoverAccelMultiplier.Value;
+        else if (gm.mob)
+            mult = Plugin.RegularEnemyHoverAccelMultiplier.Value;
+        else
+            return 1f;
+
+        if (IsGlobalTweakApplied(gm))
+            mult *= Plugin.EnemiesHoverAccelMultiplier.Value;
+
+        return mult;
+    }
+
+    /// <summary>
+    /// Scales hover speed and hover accel for mages, minions, regular enemies and hazeburnt monsters.
+    /// CharUpdateState.UpdateHoverCharacter reads the GameMonster.hoverSpeed and hoverAccel fields directly,
+    /// so the prefix scales the fields and the postfix restores the exact original values.
+    /// The per-type multipliers always apply to their own type; the global Enemies Hover multipliers
+    /// stack on top for every type that has its Apply Settings toggle on. Hazeburnt wins over mob.
+    /// </summary>
+    private sealed class HoverFieldState
+    {
+        internal float Speed;
+        internal float Accel;
+    }
+
+    [HarmonyPatch(typeof(CharUpdateState), "UpdateHoverCharacter")]
+    [HarmonyPrefix]
+    private static void UpdateHoverCharacterPrefix(MonsterDef mDef, ref HoverFieldState __state)
+    {
+        __state = null;
+        if (mDef == null || mDef.type != 1) return;
+        var gm = mDef.gameMonster;
+        var speedMult = GetHoverSpeedMultiplier(gm);
+        var accelMult = GetHoverAccelMultiplier(gm);
+        if (Math.Abs(speedMult - 1f) < 0.001f && Math.Abs(accelMult - 1f) < 0.001f) return;
+        __state = new HoverFieldState { Speed = gm.hoverSpeed, Accel = gm.hoverAccel };
+        gm.hoverSpeed *= speedMult;
+        gm.hoverAccel *= accelMult;
+    }
+
+    [HarmonyPatch(typeof(CharUpdateState), "UpdateHoverCharacter")]
+    [HarmonyPostfix]
+    private static void UpdateHoverCharacterPostfix(MonsterDef mDef, HoverFieldState __state)
+    {
+        if (__state == null) return;
+        if (mDef == null || mDef.type != 1) return;
+        mDef.gameMonster.hoverSpeed = __state.Speed;
+        mDef.gameMonster.hoverAccel = __state.Accel;
     }
 
     /// <summary>
