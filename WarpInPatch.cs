@@ -30,6 +30,20 @@ internal static class WarpInPatch
         if (def.type != 1) return;
         var gm = def.gameMonster;
 
+        // Global Tweaks: enemies take full damage during warp in, gated by the apply toggles.
+        // Hazeburnt wins over mob because hazeburnt monsters are mobs with the hazeburnt flag.
+        if (Plugin.EnemiesTakeFullDamageDuringWarpIn.Value)
+        {
+            if ((gm.mage && Plugin.ApplyGlobalTweaksToMages.Value) ||
+                (gm.minion && Plugin.ApplyGlobalTweaksToMinions.Value) ||
+                (gm.hazeBurnt && Plugin.ApplyGlobalTweaksToHazeburnt.Value) ||
+                (!gm.hazeBurnt && gm.mob && Plugin.ApplyGlobalTweaksToRegularEnemies.Value))
+            {
+                __result -= 1000f;
+                return;
+            }
+        }
+
         if (gm.mage && Plugin.MagesTakeFullDamageDuringWarpIn.Value)
         {
             __result -= 1000f;

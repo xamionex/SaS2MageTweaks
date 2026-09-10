@@ -35,6 +35,25 @@ internal static class HostilityPatch
         var otherIsMob     = otherDef.gameMonster.mob;
         var otherIsHazeburnt = otherDef.gameMonster.hazeBurnt;
 
+        // Global Tweaks: enemies won't hit other enemies, gated by the apply toggles.
+        // Hazeburnt wins over mob because hazeburnt monsters are mobs with the hazeburnt flag.
+        if (Plugin.EnemiesWontHitOtherEnemies.Value)
+        {
+            var meAffected = (meIsMage && Plugin.ApplyGlobalTweaksToMages.Value) ||
+                             (meIsMinion && Plugin.ApplyGlobalTweaksToMinions.Value) ||
+                             (meDef.gameMonster.hazeBurnt && Plugin.ApplyGlobalTweaksToHazeburnt.Value) ||
+                             (!meDef.gameMonster.hazeBurnt && meIsMob && Plugin.ApplyGlobalTweaksToRegularEnemies.Value);
+            var otherAffected = (otherIsMage && Plugin.ApplyGlobalTweaksToMages.Value) ||
+                                (otherIsMinion && Plugin.ApplyGlobalTweaksToMinions.Value) ||
+                                (otherIsHazeburnt && Plugin.ApplyGlobalTweaksToHazeburnt.Value) ||
+                                (!otherIsHazeburnt && otherIsMob && Plugin.ApplyGlobalTweaksToRegularEnemies.Value);
+            if (meAffected && otherAffected)
+            {
+                __result = false;
+                return false;
+            }
+        }
+
         if (Plugin.MagesWontHitMages.Value && meIsMage && otherIsMage)
         {
             __result = false;

@@ -182,6 +182,32 @@ internal static class EnemyScalingPatch
     }
 
     /// <summary>
+    /// Scales the run speed of mages, minions, regular enemies and hazeburnt monsters.
+    /// GameMonster.GetRunSpeed is the funnel for ground run speed and jump horizontal velocity.
+    /// The apply toggles decide which enemy types the Global Tweaks run speed multipliers affect.
+    /// Hazeburnt wins over mob because hazeburnt monsters are mobs with the hazeburnt flag.
+    /// </summary>
+    [HarmonyPatch(typeof(GameMonster), "GetRunSpeed")]
+    [HarmonyPostfix]
+    private static void GetRunSpeedPatch(GameMonster __instance, ref float __result)
+    {
+        float mult;
+        if (__instance.mage && Plugin.ApplyGlobalTweaksToMages.Value)
+            mult = Plugin.MageRunSpeedMultiplier.Value;
+        else if (__instance.minion && Plugin.ApplyGlobalTweaksToMinions.Value)
+            mult = Plugin.MinionRunSpeedMultiplier.Value;
+        else if (__instance.hazeBurnt && Plugin.ApplyGlobalTweaksToHazeburnt.Value)
+            mult = Plugin.HazeburntRunSpeedMultiplier.Value;
+        else if (!__instance.hazeBurnt && __instance.mob && Plugin.ApplyGlobalTweaksToRegularEnemies.Value)
+            mult = Plugin.RegularEnemyRunSpeedMultiplier.Value;
+        else
+            return;
+
+        if (Math.Abs(mult - 1f) < 0.001f) return;
+        __result *= mult;
+    }
+
+    /// <summary>
     /// Scales max HP for every monster category.
     /// GameMonster.GetMaxHP is the single funnel for monster HP: spawns, mage cycle math, arena heals, checkpoint resets and the player-side HP clamp all read through it, so scaling here stays consistent everywhere.
     /// </summary>
