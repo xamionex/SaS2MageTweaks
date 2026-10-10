@@ -99,6 +99,16 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<float> EnemiesLootMultiplier;
     internal static ConfigEntry<bool> EnemiesWontHitOtherEnemies;
     internal static ConfigEntry<bool> EnemiesTakeFullDamageDuringWarpIn;
+    internal static ConfigEntry<bool> TrapsWontHitMages;
+    internal static ConfigEntry<bool> TrapsWontHitMinions;
+    internal static ConfigEntry<bool> TrapsWontHitRegularEnemies;
+    internal static ConfigEntry<bool> TrapsWontHitHazeburnt;
+    internal static ConfigEntry<bool> MagesWontCollideWithMinions;
+    internal static ConfigEntry<bool> MagesWontCollideWithRegularEnemies;
+    internal static ConfigEntry<bool> MagesWontCollideWithHazeburnt;
+    internal static ConfigEntry<bool> MinionsWontCollideWithRegularEnemies;
+    internal static ConfigEntry<bool> MinionsWontCollideWithHazeburnt;
+    internal static ConfigEntry<bool> RegularEnemiesWontCollideWithHazeburnt;
     internal static ConfigEntry<bool> ApplyGlobalTweaksToMages;
     internal static ConfigEntry<bool> ApplyGlobalTweaksToMinions;
     internal static ConfigEntry<bool> ApplyGlobalTweaksToRegularEnemies;
@@ -201,6 +211,20 @@ public class Plugin : BasePlugin
         ApplyGlobalTweaksToMinions = Config.Bind("Global Tweaks", "ApplyGlobalTweaksToMinions", true, "Apply the Global Tweaks settings to minions.");
         ApplyGlobalTweaksToRegularEnemies = Config.Bind("Global Tweaks", "ApplyGlobalTweaksToRegularEnemies", true, "Apply the Global Tweaks settings to regular enemies (mobs).");
         ApplyGlobalTweaksToHazeburnt = Config.Bind("Global Tweaks", "ApplyGlobalTweaksToHazeburnt", true, "Apply the Global Tweaks settings to hazeburnt monsters.");
+
+        // Collision: traps
+        TrapsWontHitMages = Config.Bind("Collision", "TrapsWontHitMages", false, "Traps will not damage or aggro mages.");
+        TrapsWontHitMinions = Config.Bind("Collision", "TrapsWontHitMinions", false, "Traps will not damage or aggro minions.");
+        TrapsWontHitRegularEnemies = Config.Bind("Collision", "TrapsWontHitRegularEnemies", false, "Traps will not damage or aggro regular enemies (mobs).");
+        TrapsWontHitHazeburnt = Config.Bind("Collision", "TrapsWontHitHazeburnt", false, "Traps will not damage or aggro hazeburnt monsters.");
+
+        // Collision: enemy pass-through. Each pair stops pushing the two enemy types apart, so they can overlap and walk through each other.
+        MagesWontCollideWithMinions = Config.Bind("Collision", "MagesWontCollideWithMinions", false, "Mages and minions pass through each other instead of pushing each other apart.");
+        MagesWontCollideWithRegularEnemies = Config.Bind("Collision", "MagesWontCollideWithRegularEnemies", false, "Mages and regular enemies (mobs) pass through each other instead of pushing each other apart.");
+        MagesWontCollideWithHazeburnt = Config.Bind("Collision", "MagesWontCollideWithHazeburnt", false, "Mages and hazeburnt monsters pass through each other instead of pushing each other apart.");
+        MinionsWontCollideWithRegularEnemies = Config.Bind("Collision", "MinionsWontCollideWithRegularEnemies", false, "Minions and regular enemies (mobs) pass through each other instead of pushing each other apart.");
+        MinionsWontCollideWithHazeburnt = Config.Bind("Collision", "MinionsWontCollideWithHazeburnt", false, "Minions and hazeburnt monsters pass through each other instead of pushing each other apart.");
+        RegularEnemiesWontCollideWithHazeburnt = Config.Bind("Collision", "RegularEnemiesWontCollideWithHazeburnt", false, "Regular enemies (mobs) and hazeburnt monsters pass through each other instead of pushing each other apart.");
 
         var modOptionsType = Type.GetType("SaS2ModOptions.SaS2ModOptions, amione.SaS2ModOptions");
         if (modOptionsType != null)
@@ -359,6 +383,18 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(ApplyGlobalTweaksToMinions,  		mod, cat, "Apply Settings To Minions", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(ApplyGlobalTweaksToRegularEnemies, 	mod, cat, "Apply Settings To Regular Enemies", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(ApplyGlobalTweaksToHazeburnt, 		mod, cat, "Apply Settings To Hazeburnt", order += 1);
+
+        // Collision
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(TrapsWontHitMages,              		mod, cat = "Collision", "Traps Won't Hit Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(TrapsWontHitMinions,            		mod, cat, "Traps Won't Hit Minions", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(TrapsWontHitRegularEnemies,     		mod, cat, "Traps Won't Hit Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(TrapsWontHitHazeburnt,          		mod, cat, "Traps Won't Hit Hazeburnt", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontCollideWithMinions,    		mod, cat, "Mages Won't Collide With Minions", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontCollideWithRegularEnemies, 	mod, cat, "Mages Won't Collide With Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagesWontCollideWithHazeburnt,  		mod, cat, "Mages Won't Collide With Hazeburnt", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontCollideWithRegularEnemies, 	mod, cat, "Minions Won't Collide With Regular Enemies", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MinionsWontCollideWithHazeburnt, 		mod, cat, "Minions Won't Collide With Hazeburnt", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(RegularEnemiesWontCollideWithHazeburnt, mod, cat, "Regular Enemies Won't Collide With Hazeburnt", order += 1);
         // ReSharper restore RedundantAssignment
     }
 
