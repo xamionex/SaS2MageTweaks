@@ -87,6 +87,10 @@ internal static class MageSkipHelper
                 Battle2Mages.Remove(character.ID);
                 character.boss = true;
                 Plugin.OnAddCharToArenaMethod.Invoke(null, [character.ID, arenaIdx]);
+                // Reset to WAITING after promotion.
+                // Vanilla NextCycle calls SetPhase(0) itself, but NextCyclePatch skips the original to avoid the flee/teleport.
+                // A mage promoted mid-flee stays in FLEE (phase 7), which forces the warp key every frame, so it warps in place forever instead of fighting.
+                Plugin.SetPhaseMethod?.Invoke(mage, [0]);
                 Plugin.Instance.Log.LogInfo($"Mage {mage.charIdx} ({GetMageName(mage)}) promoted to boss in arena {arenaIdx}.");
             }
             else
