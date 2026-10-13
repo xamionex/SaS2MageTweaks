@@ -6,6 +6,7 @@ using Bestiary.monsters;
 using HarmonyLib;
 using ProjectMage;
 using ProjectMage.character;
+using ProjectMage.gamestate;
 using ProjectMage.hit;
 using ProjectMage.Monsters;
 using ProjectMage.particles;
@@ -15,7 +16,7 @@ namespace SaS2MageTweaks;
 /// <summary>
 /// Per-category scaling for HP, damage, poise, poise damage and loot.
 /// Categories: mages, mage minions, regular enemies (mobs) and hazeburnt monsters.
-/// Bosses (final arena mages, gauntlet mages, map bosses) get their own per-player HP scaling and mages get an extra HP multiplier for the final arena phase.
+/// Bosses (final arena mages, gauntlet mages, map bosses) get their own per-player HP scaling and mages get the global final-arena HP multiplier plus a per-hunt-type HP multiplier.
 /// All multipliers default to 1.0 (vanilla).
 /// Per-player HP scaling is off by default.
 /// </summary>
@@ -54,8 +55,7 @@ internal static class EnemyScalingPatch
 
     /// <summary>
     /// Returns the configured HP multiplier for a character.
-    /// MageHpMultiplier (the starting HP multiplier) is applied separately in MageSkipHelper.ReduceBossHp, so it is not included here.
-    /// A mage that is currently a boss gets the final arena multiplier.
+    /// A mage gets the global HP multiplier for its current phase (final arena when it is a boss) stacked with its per-hunt-type mage HP multiplier.
     /// </summary>
     private static float GetHpMultiplier(Character character)
     {
@@ -70,9 +70,32 @@ internal static class EnemyScalingPatch
         else if (gm.mob)
             mult = Plugin.RegularEnemyHpMultiplier.Value;
 
-        if (gm.mage) mult *= character.boss ? Plugin.MageHpMultiplierFinalArena.Value : Plugin.MageHpMultiplier.Value;
+        if (gm.mage)
+        {
+            mult *= character.boss ? Plugin.GlobalMageHpMultiplierFinalArena.Value : Plugin.GlobalMageHpMultiplier.Value;
+            mult *= GetMageTypeHpMultiplier();
+        }
 
         return mult;
+    }
+
+    /// <summary>
+    /// Returns the per-hunt-type HP multiplier (named, fated, nameless, gauntlet, wandering) for a mage.
+    /// Stacks on top of the global mage HP multipliers. Outside a game session there is no hunt type, so the multiplier is 1.0.
+    /// </summary>
+    private static float GetMageTypeHpMultiplier()
+    {
+        if (GameSessionMgr.gameSession == null) return 1f;
+
+        return MageSkipHelper.GetMageKind() switch
+        {
+            MageKind.Named => Plugin.NamedMageHpMultiplier.Value,
+            MageKind.Fated => Plugin.FatedMageHpMultiplier.Value,
+            MageKind.Nameless => Plugin.NamelessMageHpMultiplier.Value,
+            MageKind.Gauntlet => Plugin.GauntletMageHpMultiplier.Value,
+            MageKind.Wandering => Plugin.WanderingMageHpMultiplier.Value,
+            _ => 1f
+        };
     }
 
     /// <summary>

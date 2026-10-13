@@ -9,6 +9,16 @@ using ProjectMage.gamestate.mage;
 
 namespace SaS2MageTweaks;
 
+/// Hunt category of a mage, matching the five skip toggles.
+internal enum MageKind
+{
+    Named,
+    Fated,
+    Nameless,
+    Gauntlet,
+    Wandering
+}
+
 internal static class MageSkipHelper
 {
     /// Tracks skipped phase count per character ID for the loot bonus on death.
@@ -59,6 +69,23 @@ internal static class MageSkipHelper
 
     internal static bool ShouldSkipWanderingMage() => GameSessionMgr.gameSession.activeMission < 0 && Plugin.SkipWanderingMages.Value;
     internal static bool ShouldSkipGauntletMage() => GauntletMgr.IsActive && Plugin.SkipGauntletMages.Value;
+
+    /// Classifies a mage by the same rules the skip toggles use: gauntlet first, then no active mission (wandering), then the mission type (1 named, 2 nameless, 3 fated, everything else named).
+    /// Unlike ShouldSkipMissionMage this ignores hasCustomPath, because that flag only gates the skip reward, not the hunt type of the mage.
+    internal static MageKind GetMageKind()
+    {
+        if (GauntletMgr.IsActive) return MageKind.Gauntlet;
+
+        var activeMission = GameSessionMgr.gameSession.activeMission;
+        if (activeMission < 0) return MageKind.Wandering;
+
+        return MissionCatalog.mission[activeMission].GetMissionType() switch
+        {
+            2 => MageKind.Nameless,
+            3 => MageKind.Fated,
+            _ => MageKind.Named
+        };
+    }
 
     internal static string GetMageName(Mage mage)
     {

@@ -35,8 +35,13 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> DropLootRelativeAmount;
     internal static ConfigEntry<float> DropLootMultiplier;
     internal static ConfigEntry<bool> ReduceMageHp;
-    internal static ConfigEntry<float> MageHpMultiplier;
-    internal static ConfigEntry<float> MageHpMultiplierFinalArena;
+    internal static ConfigEntry<float> GlobalMageHpMultiplier;
+    internal static ConfigEntry<float> GlobalMageHpMultiplierFinalArena;
+    internal static ConfigEntry<float> NamedMageHpMultiplier;
+    internal static ConfigEntry<float> FatedMageHpMultiplier;
+    internal static ConfigEntry<float> NamelessMageHpMultiplier;
+    internal static ConfigEntry<float> GauntletMageHpMultiplier;
+    internal static ConfigEntry<float> WanderingMageHpMultiplier;
     internal static ConfigEntry<float> MageDamageMultiplier;
     internal static ConfigEntry<float> MagePoiseMultiplier;
     internal static ConfigEntry<float> MagePoiseDamageMultiplier;
@@ -139,8 +144,19 @@ public class Plugin : BasePlugin
         DropLootMultiplier      = Config.Bind("Hunts",    "DropLootMultiplier",      1.0f,   "Scales the bonus loot dropped per skipped phase. 1.0 = one extra phase-equivalent drop total.");
 
         // Mages
-        MageHpMultiplier        = Config.Bind("Mages", "MageHpMultiplier",        1.0f,   "Multiply mage starting HP by this value after the hunt-damage reduction.");
-        MageHpMultiplierFinalArena = Config.Bind("Mages", "MageHpMultiplierFinalArena", 1.0f, "Multiply mage HP by this value only in the final arena phase, when the mage becomes a boss. 1.0 = vanilla.");
+        // Migration for the renamed HP multipliers: binding a legacy key first adopts the value stored under it, which then becomes the default of the new key.
+        // The legacy entries are dropped right after the new keys are bound, so the next config save no longer writes them.
+        var legacyMageHp      = Config.Bind("Mages", "MageHpMultiplier",           1.0f, "Renamed to GlobalMageHpMultiplier.");
+        var legacyMageHpFinal = Config.Bind("Mages", "MageHpMultiplierFinalArena", 1.0f, "Renamed to GlobalMageHpMultiplierFinalArena.");
+        GlobalMageHpMultiplier           = Config.Bind("Mages", "GlobalMageHpMultiplier",           legacyMageHp.Value,      "Scales the HP of every mage outside the final arena. Stacks with the per-type mage HP multipliers. 1.0 = vanilla.");
+        GlobalMageHpMultiplierFinalArena = Config.Bind("Mages", "GlobalMageHpMultiplierFinalArena", legacyMageHpFinal.Value, "Scales the HP of every mage in the final arena phase, when the mage becomes a boss. Stacks with the per-type mage HP multipliers. 1.0 = vanilla.");
+        NamedMageHpMultiplier     = Config.Bind("Mages", "NamedMageHpMultiplier",     1.0f, "Scales the HP of named hunt mages (e.g. Arzhan-Tin, Celus Zend). Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        FatedMageHpMultiplier     = Config.Bind("Mages", "FatedMageHpMultiplier",     1.0f, "Scales the HP of fated hunt mages (tiered mages shown with a tier number in mission select). Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        NamelessMageHpMultiplier  = Config.Bind("Mages", "NamelessMageHpMultiplier",  1.0f, "Scales the HP of nameless hunt mages (repeatable hunts, reward token_nameless). Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        GauntletMageHpMultiplier  = Config.Bind("Mages", "GauntletMageHpMultiplier",  1.0f, "Scales the HP of gauntlet mages. Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        WanderingMageHpMultiplier = Config.Bind("Mages", "WanderingMageHpMultiplier", 1.0f, "Scales the HP of wandering/roaming mages outside of hunts. Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        Config.Remove(new ConfigDefinition("Mages", "MageHpMultiplier"));
+        Config.Remove(new ConfigDefinition("Mages", "MageHpMultiplierFinalArena"));
         MageDamageMultiplier    = Config.Bind("Mages", "MageDamageMultiplier",     1.0f,   "Scales the damage dealt by mages. 1.0 = vanilla.");
         MagePoiseMultiplier     = Config.Bind("Mages", "MagePoiseMultiplier",      1.0f,   "Scales the poise (stagger resistance) of mages. 1.0 = vanilla.");
         MagePoiseDamageMultiplier = Config.Bind("Mages", "MagePoiseDamageMultiplier", 1.0f, "Scales the poise damage dealt by mages. 1.0 = vanilla.");
@@ -311,8 +327,13 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(DropLootMultiplier,     			mod, cat, "Hunt Loot Multiplier", order += 1);
 
         // Mages
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MageHpMultiplier,       			mod, cat = "Mages", "Mage HP Multiplier", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(MageHpMultiplierFinalArena, 		mod, cat, "Mage HP Multiplier (Final Arena)", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(GlobalMageHpMultiplier,       			mod, cat = "Mages", "Global Mage HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(GlobalMageHpMultiplierFinalArena, 		mod, cat, "Global Mage HP Multiplier (Final Arena)", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(NamedMageHpMultiplier,                     mod, cat, "Named Mage HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(FatedMageHpMultiplier,                     mod, cat, "Fated Mage HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(NamelessMageHpMultiplier,                  mod, cat, "Nameless Mage HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(GauntletMageHpMultiplier,                  mod, cat, "Gauntlet Mage HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(WanderingMageHpMultiplier,                 mod, cat, "Wandering Mage HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MageDamageMultiplier,    			mod, cat, "Mage Damage Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagePoiseMultiplier,     			mod, cat, "Mage Poise Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagePoiseDamageMultiplier, 		mod, cat, "Mage Poise Damage Multiplier", order += 1);
