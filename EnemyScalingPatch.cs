@@ -38,8 +38,8 @@ internal static class EnemyScalingPatch
     /// </summary>
     private static Category GetCategory(Character character)
     {
-        if (character == null) return Category.None;
-        if (character.monsterIdx < 0 || character.monsterIdx >= MonsterCatalog.monsterDef.Count) return Category.None;
+        if (character == null || character.monsterIdx < 0 || character.monsterIdx >= MonsterCatalog.monsterDef.Count)
+            return Category.None;
 
         var def = MonsterCatalog.monsterDef[character.monsterIdx];
         if (def.type != 1 && def.type != 6) return Category.None;
@@ -70,8 +70,7 @@ internal static class EnemyScalingPatch
         else if (gm.mob)
             mult = Plugin.RegularEnemyHpMultiplier.Value;
 
-        if (character.boss && gm.mage)
-            mult *= Plugin.MageHpMultiplierFinalArena.Value;
+        if (gm.mage) mult *= character.boss ? Plugin.MageHpMultiplierFinalArena.Value : Plugin.MageHpMultiplier.Value;
 
         return mult;
     }
@@ -84,7 +83,7 @@ internal static class EnemyScalingPatch
         if (Math.Abs(Plugin.MinionHpMultiplierFinalArena.Value - 1f) < 0.001f) return 1f;
         if (character.minionParentIdx < 0 || character.minionParentIdx >= CharMgr.character.Length) return 1f;
         var parent = CharMgr.character[character.minionParentIdx];
-        if (parent == null || !parent.exists || !parent.boss) return 1f;
+        if (parent is not { exists: true } || !parent.boss) return 1f;
         return Plugin.MinionHpMultiplierFinalArena.Value;
     }
 
@@ -183,7 +182,8 @@ internal static class EnemyScalingPatch
             _ => 1f
         };
 
-        if (category != Category.None && IsGlobalTweakApplied(MonsterCatalog.monsterDef[character.monsterIdx].gameMonster))
+        if (category != Category.None &&
+            IsGlobalTweakApplied(MonsterCatalog.monsterDef[character.monsterIdx].gameMonster))
             mult *= Plugin.EnemiesLootMultiplier.Value;
 
         return mult;
@@ -198,8 +198,10 @@ internal static class EnemyScalingPatch
     /// </summary>
     [HarmonyPatch(typeof(GameMonster), "GetRunSpeed")]
     [HarmonyPostfix]
+    // ReSharper disable InconsistentNaming
     private static void GetRunSpeedPatch(GameMonster __instance, ref float __result)
     {
+        // ReSharper restore InconsistentNaming
         float mult;
         if (__instance.mage)
             mult = Plugin.MageRunSpeedMultiplier.Value;
@@ -297,6 +299,7 @@ internal static class EnemyScalingPatch
 
     [HarmonyPatch(typeof(CharUpdateState), "UpdateHoverCharacter")]
     [HarmonyPrefix]
+    // ReSharper disable once InconsistentNaming
     private static void UpdateHoverCharacterPrefix(MonsterDef mDef, ref HoverFieldState __state)
     {
         __state = null;
@@ -312,10 +315,11 @@ internal static class EnemyScalingPatch
 
     [HarmonyPatch(typeof(CharUpdateState), "UpdateHoverCharacter")]
     [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
     private static void UpdateHoverCharacterPostfix(MonsterDef mDef, HoverFieldState __state)
     {
         if (__state == null) return;
-        if (mDef == null || mDef.type != 1) return;
+        if (mDef is not { type: 1 }) return;
         mDef.gameMonster.hoverSpeed = __state.Speed;
         mDef.gameMonster.hoverAccel = __state.Accel;
     }
@@ -326,6 +330,7 @@ internal static class EnemyScalingPatch
     /// </summary>
     [HarmonyPatch(typeof(GameMonster), "GetMaxHP")]
     [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
     private static void GetMaxHpPatch(Character character, ref float __result)
     {
         if (character == null || character.playerIdx > -1) return;
@@ -344,6 +349,7 @@ internal static class EnemyScalingPatch
     /// </summary>
     [HarmonyPatch(typeof(GameMonster), "GetMaxPoise")]
     [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
     private static void GetMaxPoisePatch(Character character, ref float __result)
     {
         if (character == null || character.playerIdx > -1) return;
@@ -378,11 +384,12 @@ internal static class EnemyScalingPatch
     /// </summary>
     [HarmonyPatch(typeof(HitManager), "GetPoiseAtkVal")]
     [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
     private static void GetPoiseAtkValPatch(Particle p, ref float __result)
     {
         if (p == null || p.owner < 0 || p.owner >= CharMgr.character.Length) return;
         var owner = CharMgr.character[p.owner];
-        if (owner == null || !owner.exists || owner.playerIdx > -1) return;
+        if (owner is not { exists: true } || owner.playerIdx > -1) return;
 
         var mult = GetPoiseDamageMultiplier(owner);
         if (Math.Abs(mult - 1f) < 0.001f) return;
@@ -440,7 +447,8 @@ internal static class EnemyScalingPatch
         }
 
         if (patched != 2)
-            Plugin.Instance.Log.LogWarning($"[EnemyScalingPatch] Expected 2 loot stores in CharDeath.DropLoot, found {patched}; loot multipliers may be incomplete.");
+            Plugin.Instance.Log.LogWarning(
+                $"[EnemyScalingPatch] Expected 2 loot stores in CharDeath.DropLoot, found {patched}; loot multipliers may be incomplete.");
 
         return list;
     }

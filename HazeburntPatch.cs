@@ -27,8 +27,13 @@ internal static class HazeburntPatch
         if (instr.opcode == OpCodes.Ldc_I4 && instr.operand is int i) return i;
         if (instr.opcode == OpCodes.Ldc_I4_S)
         {
-            if (instr.operand is sbyte sb) return sb;
-            if (instr.operand is byte b) return b;
+            switch (instr.operand)
+            {
+                case sbyte sb:
+                    return sb;
+                case byte b:
+                    return b;
+            }
         }
         if (instr.opcode == OpCodes.Ldc_I4_M1) return -1;
         if (instr.opcode == OpCodes.Ldc_I4_0) return 0;

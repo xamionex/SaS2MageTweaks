@@ -87,6 +87,7 @@ internal static class MagePatch
     // Scale the summon pools right after a mage is activated so the configured minion counts apply to every fight.
     [HarmonyPatch(typeof(Mage), "Activate")]
     [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
     public static void ActivatePatch(Mage __instance)
     {
         MageSkipHelper.ApplyMinionCountMultipliers(__instance);
@@ -95,6 +96,7 @@ internal static class MagePatch
     // Capture the phase before Summon() advances it, so the per-event multiplier can be looked up.
     [HarmonyPatch(typeof(Mage), "Summon")]
     [HarmonyPrefix]
+    // ReSharper disable once InconsistentNaming
     public static void SummonPrefix(Mage __instance)
     {
         SummonMultipliers[__instance.charIdx] = MageSkipHelper.GetSummonCountMultiplier(__instance.phase);
@@ -105,6 +107,7 @@ internal static class MagePatch
     // Vanilla: summonFrame = 1.5s, one SummonNext every 0.5s -> 2 minions per event.
     [HarmonyPatch(typeof(Mage), "Summon")]
     [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
     public static void SummonPostfix(Mage __instance)
     {
         var multiplier = SummonMultipliers.TryGetValue(__instance.charIdx, out var m) ? m : 1f;
@@ -115,6 +118,7 @@ internal static class MagePatch
     // Cap each summon event at the scaled count so a 0 multiplier means no minions at all.
     [HarmonyPatch(typeof(Mage), "SummonNext")]
     [HarmonyPrefix]
+    // ReSharper disable once InconsistentNaming
     public static bool SummonNextPrefix(Mage __instance)
     {
         if (!SummonMultipliers.TryGetValue(__instance.charIdx, out var multiplier)) return true;
@@ -135,6 +139,7 @@ internal static class MagePatch
     // That would cut the scaled count short in later cycles, so when the multiplier is active we keep the summon window open until the cap is reached.
     [HarmonyPatch(typeof(Mage), "SummonNext")]
     [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
     public static void SummonNextPostfix(Mage __instance)
     {
         if (!SummonMultipliers.TryGetValue(__instance.charIdx, out var multiplier)) return;
@@ -150,6 +155,7 @@ internal static class MagePatch
     // Disable the ambush summon phase (mage warps away and summons minions mid-hunt).
     [HarmonyPatch(typeof(Mage), "Update")]
     [HarmonyPrefix]
+    // ReSharper disable once InconsistentNaming
     public static void UpdateAmbushSummonPatch(Mage __instance)
     {
         if (Plugin.DisableWarpAndSummonMinions.Value)
@@ -159,6 +165,7 @@ internal static class MagePatch
     // Disable the ambush rage phase (mage warps to the player and enters an aggressive attack state mid-hunt).
     [HarmonyPatch(typeof(Mage), "Update")]
     [HarmonyPrefix]
+    // ReSharper disable once InconsistentNaming
     public static void UpdateAmbushRagePatch(Mage __instance)
     {
         if (Plugin.DisableWarpAndAggressiveAttack.Value)

@@ -69,7 +69,8 @@ internal static class MageSkipHelper
         return monsterDef?.name ?? "Unknown";
     }
 
-    /// Tries to promote a mage to boss. If the mage is not yet inside an arena rect, parks it in BATTLE_2 and returns, NextCyclePatch will retry each frame until the mage has moved inside the rect during combat, at which point promotion succeeds.
+    /// Tries to promote a mage to boss.
+    /// If the mage is not yet inside an arena rect, parks it in BATTLE_2 and returns, NextCyclePatch will retry each frame until the mage has moved inside the rect during combat, at which point promotion succeeds.
     internal static void TryPromoteToBoss(Character character, Mage mage)
     {
         // Already successfully promoted, nothing to do.
@@ -114,8 +115,7 @@ internal static class MageSkipHelper
 
         var monsterDef = MonsterCatalog.monsterDef[character.monsterIdx];
         var maxHp      = (float)Plugin.GetMaxHpMethod.Invoke(monsterDef.gameMonster, [character]); 
-        var targetHp = GauntletMgr.IsActive ? maxHp / 2f : maxHp / 4f;
-        var newHp = targetHp * Plugin.MageHpMultiplier.Value;
+        var newHp = GauntletMgr.IsActive ? maxHp / 2f : maxHp / 4f;
 
         if (!(Math.Abs(character.hp - newHp) > 0.1f)) return;
         Plugin.Instance.Log.LogInfo($"Mage {mage.charIdx} HP: {character.hp} -> {newHp} (max: {maxHp})");
@@ -143,8 +143,8 @@ internal static class MageSkipHelper
     }
 
     /// Scales the summon pools of a mage by the configured multipliers. Vanilla pools are 20 regular, 8 special, 4 elite.
-    /// Both warp summons and phase summons draw from the same pool, so the pool is scaled by the larger of the two
-    /// multipliers; the per-event count is scaled separately in MagePatch.SummonPatch.
+    /// Both warp summons and phase summons draw from the same pool, so the pool is scaled by the larger of the two multipliers;
+    /// the per-event count is scaled separately in MagePatch.SummonPatch.
     internal static void ApplyMinionCountMultipliers(Mage mage)
     {
         var poolMultiplier = Math.Max(Plugin.WarpSummonCountMultiplier.Value, Plugin.PhaseSummonCountMultiplier.Value);
