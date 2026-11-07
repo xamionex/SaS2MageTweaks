@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using Bestiary.monsters;
+using Chronicler.missions;
 using HarmonyLib;
 using ProjectMage;
 using ProjectMage.character;
 using ProjectMage.gamestate;
+using ProjectMage.gamestate.mage;
 using ProjectMage.hit;
 using ProjectMage.Monsters;
 using ProjectMage.particles;
@@ -73,29 +75,96 @@ internal static class EnemyScalingPatch
         if (gm.mage)
         {
             mult *= character.boss ? Plugin.GlobalMageHpMultiplierFinalArena.Value : Plugin.GlobalMageHpMultiplier.Value;
-            mult *= GetMageTypeHpMultiplier();
+            mult *= GetMageTypeHpMultiplier(character);
         }
 
         return mult;
     }
 
     /// <summary>
-    /// Returns the per-hunt-type HP multiplier (named, fated, nameless, gauntlet, wandering) for a mage.
-    /// Stacks on top of the global mage HP multipliers. Outside a game session there is no hunt type, so the multiplier is 1.0.
+    /// Returns the per-category HP multiplier for a mage: named, fated, nameless, gauntlet, hunt wandering or non-hunt wandering.
+    /// The wandering mages of an area (the targets of its world mission) are non-hunt wandering.
+    /// Named, fated and nameless primary targets also get the hunt wandering multiplier while they are still roaming (never promoted to boss).
+    /// Stacks on top of the global mage HP multipliers.
+    /// Outside a game session there is no hunt type, so the multiplier is 1.0.
     /// </summary>
-    private static float GetMageTypeHpMultiplier()
+    private static float GetMageTypeHpMultiplier(Character character)
     {
         if (GameSessionMgr.gameSession == null) return 1f;
 
-        return MageSkipHelper.GetMageKind() switch
+        var mage = MageSkipHelper.ResolveMage(character);
+        var kind = MageSkipHelper.GetMageKind(character, mage);
+
+        var mult = kind switch
         {
             MageKind.Named => Plugin.NamedMageHpMultiplier.Value,
             MageKind.Fated => Plugin.FatedMageHpMultiplier.Value,
             MageKind.Nameless => Plugin.NamelessMageHpMultiplier.Value,
             MageKind.Gauntlet => Plugin.GauntletMageHpMultiplier.Value,
-            MageKind.Wandering => Plugin.WanderingMageHpMultiplier.Value,
+            MageKind.HuntWandering => Plugin.HuntWanderingMageHpMultiplier.Value,
+            MageKind.NonHuntWandering => Plugin.NonHuntWanderingMageHpMultiplier.Value,
             _ => 1f
         };
+
+        // A mission target still out in the field (never promoted to boss) additionally gets the hunt wandering multiplier.
+        // The CreateMages window covers the very first GetMaxHP, which sets spawn HP before SetMissionTarget designates.
+        if (!character.boss && kind is MageKind.Named or MageKind.Fated or MageKind.Nameless &&
+            (MageSkipHelper.CreateMagesDepth > 0 || (mage != null && MageSkipHelper.IsMissionMage(mage))))
+            mult *= Plugin.HuntWanderingMageHpMultiplier.Value;
+
+        LogMageHpClassification(character, mage, kind, mult);
+        return mult;
+    }
+
+    /// Character IDs are reused after a map load, so the log maps are cleared there too.
+    /// Keyed by character ID with the last logged "kind:mult" pair, so a line is written on first call and again only when the classification actually changes (designation, boss transition).
+    private static readonly Dictionary<int, string> HpLoggedMages = new();
+
+    /// Logs everything the HP classification decided, so a single repro tells which rule applied.
+    private static void LogMageHpClassification(Character character, Mage mage, MageKind kind, float mult)
+    {
+        var key = $"{kind}:{mult}";
+        if (HpLoggedMages.TryGetValue(character.ID, out var last) && last == key) return;
+        HpLoggedMages[character.ID] = key;
+
+        var activeMission = GameSessionMgr.gameSession.activeMission;
+        var missionType   = activeMission >= 0 ? MissionCatalog.mission[activeMission].GetMissionType() : -1;
+        var missionTarget = mage != null && MageSkipHelper.IsMissionMage(mage);
+        var primaryTarget = mage != null && MageSkipHelper.IsPrimaryMissionTarget(mage);
+        var name          = MonsterCatalog.monsterDef[character.monsterIdx].name;
+        Plugin.Instance.Log.LogInfo($"mage HP: ID {character.ID} ({name}), registered: {mage != null}, missionTarget: {missionTarget}, primaryTarget: {primaryTarget}, createWindow: {MageSkipHelper.CreateMagesDepth > 0}, Mission: {activeMission}, Type: {missionType}, kind: {kind}, mult: {mult}");
+    }
+
+    /// Forgets the HP log state of one character ID, so a mage that reuses the ID of a dead one is logged again.
+    internal static void ForgetCharacter(int charId)
+    {
+        HpLoggedMages.Remove(charId);
+        MaxHpLogKeys.Remove(charId);
+    }
+
+    /// Clears the HP log maps on map load so reused character IDs get logged again.
+    [HarmonyPatch(typeof(NetworkEvents), "OnMapLoading")]
+    [HarmonyPostfix]
+    // ReSharper disable once InconsistentNaming
+    private static void OnMapLoadingHpLogPatch()
+    {
+        HpLoggedMages.Clear();
+        MaxHpLogKeys.Clear();
+    }
+
+    /// Keyed by character ID with the last logged "original -> scaled" pair. GetMaxHP runs every frame,
+    /// so this keeps the transition log to one line per actual value change.
+    private static readonly Dictionary<int, string> MaxHpLogKeys = new();
+
+    /// Logs "original -> new" whenever a mage's scaled max HP changes, so the log shows directly whether and to what value the HP multipliers applied, including the unscaled case.
+    private static void LogMageMaxHp(Character character, MonsterDef def, float orig, float scaled, float mult)
+    {
+        var key = $"{orig} -> {scaled}";
+        if (MaxHpLogKeys.TryGetValue(character.ID, out var last) && last == key) return;
+        MaxHpLogKeys[character.ID] = key;
+        // The constructor's GetMaxHP call runs before the hp field is assigned, so a zero there means not set yet.
+        var hp = character.hp > 0f ? $"current hp: {character.hp}" : "current hp: not set yet (spawn)";
+        Plugin.Instance.Log.LogInfo($"Mage {character.ID} ({def.name}) max HP: {key} (mult: {mult}, {hp})");
     }
 
     /// <summary>
@@ -361,9 +430,12 @@ internal static class EnemyScalingPatch
         var def = MonsterCatalog.monsterDef[character.monsterIdx];
         if (def.type != 1 && def.type != 6) return;
 
+        var orig = __result;
         var mult = GetHpMultiplier(character) * GetPerPlayerHpMultiplier(character);
-        if (Math.Abs(mult - 1f) < 0.001f) return;
-        __result *= mult;
+        // Multipliers within 0.001 of 1 count as no scaling, so log and apply exactly the same value.
+        var scaled = Math.Abs(mult - 1f) < 0.001f ? orig : orig * mult;
+        if (def.gameMonster.mage) LogMageMaxHp(character, def, orig, scaled, mult);
+        __result = scaled;
     }
 
     /// <summary>

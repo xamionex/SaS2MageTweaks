@@ -30,7 +30,8 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> SkipFatedMages;
     internal static ConfigEntry<bool> SkipNamelessMages;
     internal static ConfigEntry<bool> SkipGauntletMages;
-    internal static ConfigEntry<bool> SkipWanderingMages;
+    internal static ConfigEntry<bool> SkipNonHuntWanderingMages;
+    internal static ConfigEntry<bool> SkipHuntWanderingMages;
     internal static ConfigEntry<bool> SpawnAtFinalLocation;
     internal static ConfigEntry<bool> DropLootRelativeAmount;
     internal static ConfigEntry<float> DropLootMultiplier;
@@ -41,7 +42,8 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<float> FatedMageHpMultiplier;
     internal static ConfigEntry<float> NamelessMageHpMultiplier;
     internal static ConfigEntry<float> GauntletMageHpMultiplier;
-    internal static ConfigEntry<float> WanderingMageHpMultiplier;
+    internal static ConfigEntry<float> NonHuntWanderingMageHpMultiplier;
+    internal static ConfigEntry<float> HuntWanderingMageHpMultiplier;
     internal static ConfigEntry<float> MageDamageMultiplier;
     internal static ConfigEntry<float> MagePoiseMultiplier;
     internal static ConfigEntry<float> MagePoiseDamageMultiplier;
@@ -127,12 +129,20 @@ public class Plugin : BasePlugin
         Instance = this;
 
         // Hunts
-        SkipNamedMages          = Config.Bind("Hunts", "SkipNamedMages",          false,  "Skip hunt phases for named mission mages (e.g. Arzhan-Tin, Celus Zend).");
-        SkipFatedMages          = Config.Bind("Hunts", "SkipFatedMages",          false,  "Skip hunt phases for fated mages (tiered mages shown with a tier number in mission select).");
-        SkipNamelessMages       = Config.Bind("Hunts", "SkipNamelessMages",       false,  "Skip hunt phases for nameless mission mages (repeatable hunts, reward token_nameless).");
+        SkipNamedMages          = Config.Bind("Hunts", "SkipNamedMages",          false,  "Skip hunt phases for named hunt mages (e.g. Arzhan-Tin, Celus Zend).");
+        SkipFatedMages          = Config.Bind("Hunts", "SkipFatedMages",          false,  "Skip hunt phases for fated hunt mages (tiered mages shown with a tier number in mission select).");
+        SkipNamelessMages       = Config.Bind("Hunts", "SkipNamelessMages",       false,  "Skip hunt phases for nameless hunt mages (repeatable hunts, reward token_nameless).");
         SkipGauntletMages       = Config.Bind("Hunts", "SkipGauntletMages",       false,  "Skip hunt phases for gauntlet mages (each one immediately starts a 'boss' fight).");
-        SkipWanderingMages      = Config.Bind("Hunts", "SkipWanderingMages",      false,  "Skip hunt phases for wandering/roaming mages.");
-        SpawnAtFinalLocation    = Config.Bind("Hunts", "SpawnAtFinalLocation",    false,  "Teleport the primary mission mage directly to its arena entrance when skipping. Off by default, mages spawn at zone 0 and walk to the arena naturally. Only affects the non-invisible target mage; companion mages in the same hunt should be unaffected.");
+        // Migration for the renamed skip keys: binding the legacy keys in order adopts the most recent stored value, which becomes the default of the new key.
+        var legacySkipWandering         = Config.Bind("Hunts", "SkipWanderingMages", false, "Renamed to SkipNonHuntWanderingMages.");
+        var previousNonMissionWandering = Config.Bind("Hunts", "SkipNonMissionWanderingMages", legacySkipWandering.Value, "Renamed to SkipNonHuntWanderingMages.");
+        SkipNonHuntWanderingMages = Config.Bind("Hunts", "SkipNonHuntWanderingMages", previousNonMissionWandering.Value, "Skip hunt phases for non-hunt wandering mages: the wandering mages roaming an area outside of any hunt.");
+        var previousMissionWandering    = Config.Bind("Hunts", "SkipMissionWanderingMages", true, "Renamed to SkipHuntWanderingMages.");
+        SkipHuntWanderingMages = Config.Bind("Hunts", "SkipHuntWanderingMages", previousMissionWandering.Value, "Skip hunt phases for hunt wandering mages: the other mages of an active hunt, such as companion and optional targets. The Named/Fated/Nameless toggles decide the primary hunt target independently.");
+        Config.Remove(new ConfigDefinition("Hunts", "SkipWanderingMages"));
+        Config.Remove(new ConfigDefinition("Hunts", "SkipNonMissionWanderingMages"));
+        Config.Remove(new ConfigDefinition("Hunts", "SkipMissionWanderingMages"));
+        SpawnAtFinalLocation    = Config.Bind("Hunts", "SpawnAtFinalLocation",    false,  "Teleport the primary target mage directly to its arena entrance when skipping. Off by default, mages spawn at zone 0 and walk to the arena naturally. Only affects the non-invisible target mage; companion mages in the same hunt should be unaffected.");
         ReduceMageHp            = Config.Bind("Hunts", "ReduceMageHP",            false,  "Start mage fight with reduced HP (simulates hunt damage).");
         DisableWarpAndSummonMinions = Config.Bind("Hunts", "DisableWarpAndSummonMinions", false, "Disable the ambush summon phase for mages that have it (they will not warp away and summon minions mid-hunt).");
         DisableWarpAndAggressiveAttack = Config.Bind("Hunts", "DisableWarpAndAggressiveAttack", false, "Disable the ambush rage phase for mages that have it (they will not warp to the player and enter an aggressive attack state mid-hunt).");
@@ -154,7 +164,14 @@ public class Plugin : BasePlugin
         FatedMageHpMultiplier     = Config.Bind("Mages", "FatedMageHpMultiplier",     1.0f, "Scales the HP of fated hunt mages (tiered mages shown with a tier number in mission select). Stacks with the global mage HP multipliers. 1.0 = vanilla.");
         NamelessMageHpMultiplier  = Config.Bind("Mages", "NamelessMageHpMultiplier",  1.0f, "Scales the HP of nameless hunt mages (repeatable hunts, reward token_nameless). Stacks with the global mage HP multipliers. 1.0 = vanilla.");
         GauntletMageHpMultiplier  = Config.Bind("Mages", "GauntletMageHpMultiplier",  1.0f, "Scales the HP of gauntlet mages. Stacks with the global mage HP multipliers. 1.0 = vanilla.");
-        WanderingMageHpMultiplier = Config.Bind("Mages", "WanderingMageHpMultiplier", 1.0f, "Scales the HP of wandering/roaming mages outside of hunts. Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        var legacyWanderingHp             = Config.Bind("Mages", "WanderingMageHpMultiplier", 1.0f, "Renamed to NonHuntWanderingMageHpMultiplier.");
+        var previousNonMissionWanderingHp = Config.Bind("Mages", "NonMissionWanderingMageHpMultiplier", legacyWanderingHp.Value, "Renamed to NonHuntWanderingMageHpMultiplier.");
+        NonHuntWanderingMageHpMultiplier = Config.Bind("Mages", "NonHuntWanderingMageHpMultiplier", previousNonMissionWanderingHp.Value, "Scales the HP of non-hunt wandering mages: the wandering mages roaming an area outside of any hunt. Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        var previousMissionWanderingHp    = Config.Bind("Mages", "MissionWanderingMageHpMultiplier", 1.0f, "Renamed to HuntWanderingMageHpMultiplier.");
+        HuntWanderingMageHpMultiplier = Config.Bind("Mages", "HuntWanderingMageHpMultiplier", previousMissionWanderingHp.Value, "Scales the HP of hunt wandering mages: the other mages of an active hunt, such as companion and optional targets. Also applies as an extra multiplier on named, fated and nameless primary targets while they are still roaming, before they reach their arena and become bosses. Stacks with the global mage HP multipliers. 1.0 = vanilla.");
+        Config.Remove(new ConfigDefinition("Mages", "WanderingMageHpMultiplier"));
+        Config.Remove(new ConfigDefinition("Mages", "NonMissionWanderingMageHpMultiplier"));
+        Config.Remove(new ConfigDefinition("Mages", "MissionWanderingMageHpMultiplier"));
         Config.Remove(new ConfigDefinition("Mages", "MageHpMultiplier"));
         Config.Remove(new ConfigDefinition("Mages", "MageHpMultiplierFinalArena"));
         MageDamageMultiplier    = Config.Bind("Mages", "MageDamageMultiplier",     1.0f,   "Scales the damage dealt by mages. 1.0 = vanilla.");
@@ -314,7 +331,8 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(SkipFatedMages,         			mod, cat, "Skip Fated Mages", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(SkipNamelessMages,					mod, cat, "Skip Nameless Mages", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(SkipGauntletMages,					mod, cat, "Skip Gauntlet Mages", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(SkipWanderingMages,     			mod, cat, "Skip Wandering Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(SkipNonHuntWanderingMages,	mod, cat, "Skip Non-Hunt Wandering Mages", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(SkipHuntWanderingMages,		mod, cat, "Skip Hunt Wandering Mages", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(SpawnAtFinalLocation,   			mod, cat, "Spawn At Final Location", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(DisableWarpAndSummonMinions,    	mod, cat, "Disable Warp And Summon Minions", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(DisableWarpAndAggressiveAttack,  	mod, cat, "Disable Warp And Aggressive Attack", order += 1);
@@ -333,7 +351,8 @@ public class Plugin : BasePlugin
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(FatedMageHpMultiplier,                     mod, cat, "Fated Mage HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(NamelessMageHpMultiplier,                  mod, cat, "Nameless Mage HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(GauntletMageHpMultiplier,                  mod, cat, "Gauntlet Mage HP Multiplier", order += 1);
-        SaS2ModOptions.SaS2ModOptions.RegisterConfig(WanderingMageHpMultiplier,                 mod, cat, "Wandering Mage HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(NonHuntWanderingMageHpMultiplier,       mod, cat, "Non-Hunt Wandering Mage HP Multiplier", order += 1);
+        SaS2ModOptions.SaS2ModOptions.RegisterConfig(HuntWanderingMageHpMultiplier,          mod, cat, "Hunt Wandering Mage HP Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MageDamageMultiplier,    			mod, cat, "Mage Damage Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagePoiseMultiplier,     			mod, cat, "Mage Poise Multiplier", order += 1);
         SaS2ModOptions.SaS2ModOptions.RegisterConfig(MagePoiseDamageMultiplier, 		mod, cat, "Mage Poise Damage Multiplier", order += 1);

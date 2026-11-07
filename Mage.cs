@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using HarmonyLib;
 using ProjectMage;
 using ProjectMage.character;
-using ProjectMage.gamestate;
-using ProjectMage.gamestate.arenastate;
 using ProjectMage.gamestate.mage;
 
 namespace SaS2MageTweaks;
@@ -27,22 +25,18 @@ internal static class MagePatch
     // ReSharper disable once InconsistentNaming
     public static bool NextCyclePatch(Mage __instance)
     {
-        // Determine if this mage should be skipped based on current config
-        var shouldSkip = false;
-        if (GameSessionMgr.gameSession.activeMission < 0)
-            shouldSkip = MageSkipHelper.ShouldSkipWanderingMage();
-        if (!shouldSkip && GauntletMgr.IsActive)
-            shouldSkip = MageSkipHelper.ShouldSkipGauntletMage();
-        if (!shouldSkip && GameSessionMgr.gameSession.activeMission > 0)
-            shouldSkip = MageSkipHelper.ShouldSkipMissionMage(__instance);
-
-        if (!shouldSkip) return true;          // No skipping, run original NextCycle
-        if (!NetworkMgr.Instance.IsHost()) return true;
-
         if (__instance.charIdx < 0 || __instance.charIdx >= CharMgr.character.Length)
             return true;
         var character = CharMgr.character[__instance.charIdx];
         if (character is not { exists: true }) return true;
+
+        // Skip decision per mage, from the same classification as the HP multipliers: the primary target of a hunt uses its hunt type toggle,
+        // every other mage of a hunt uses the hunt wandering toggle, and mages outside a hunt (the wandering mages of an area's world mission) use the non-hunt wandering toggle.
+        // Gauntlet mages use the gauntlet toggle.
+        var shouldSkip = MageSkipHelper.ShouldSkip(MageSkipHelper.GetMageKind(character, __instance), __instance);
+
+        if (!shouldSkip) return true;          // No skipping, run original NextCycle
+        if (!NetworkMgr.Instance.IsHost()) return true;
 
         // Already a boss, nothing more to do, skip original
         if (character.boss) return false;
@@ -82,6 +76,34 @@ internal static class MagePatch
         SummonCounts.Clear();
         MageSkipHelper.ClearPromotionCache();
         Plugin.Instance.Log.LogDebug("MagePatch caches cleared on map load.");
+    }
+
+    // Mod-skipped mages parked in BATTLE_2 are cycle-complete and never boss, which is exactly vanilla UpdatePursuit's post-cycle branch: perpetual leap-warp at players plus an HP floor at 10% of max, leaving them unkillable while they chase.
+    // Skipping the whole method for them is safe: the pre-cycle flee leap needs cycle < totalCycles and the warp key forcing only matters in warp phases, both inert for a parked mage, which is why warp phases are let through anyway.
+    [HarmonyPatch(typeof(Mage), "UpdatePursuit")]
+    [HarmonyPrefix]
+    // ReSharper disable once InconsistentNaming
+    public static bool UpdatePursuitPrefix(Mage __instance, Character character)
+    {
+        if (character == null) return true;
+        if (!MageSkipHelper.IsBattle2Waiting(character.ID)) return true;
+        return __instance.phase is 2 or 5 or 7 or 8 or 11;
+    }
+
+    // Character IDs are reused: CharMgr.AddCharacter hands out the lowest free slot, so a wanderer that respawns after a kill usually gets the dead mage's ID.
+    // Every per-ID cache must be dropped when a mage is activated, or the new mage inherits "already skipped", "already promoted" or "parked in BATTLE_2" from its predecessor.
+    // A prefix, so the state the new mage creates during Activate itself (its first GetMaxHP calls) is kept.
+    [HarmonyPatch(typeof(Mage), "Activate")]
+    [HarmonyPrefix]
+    // ReSharper disable once InconsistentNaming
+    public static void ActivateForgetPrefix(int charIdx)
+    {
+        SkippedMages.Remove(charIdx);
+        HpReducedMages.Remove(charIdx);
+        SummonMultipliers.Remove(charIdx);
+        SummonCounts.Remove(charIdx);
+        MageSkipHelper.ForgetCharacter(charIdx);
+        EnemyScalingPatch.ForgetCharacter(charIdx);
     }
 
     // Scale the summon pools right after a mage is activated so the configured minion counts apply to every fight.
